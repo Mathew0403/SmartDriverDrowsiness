@@ -21,7 +21,7 @@ def alarm(msg):
     global saying
 
     while alarm_status:
-        print('call')
+        # print('call')
         # s = 'espeak "'+msg+'"'
         # os.system(s)
         converter = pyttsx3.init()
@@ -33,7 +33,7 @@ def alarm(msg):
         converter.stop()
 
     if alarm_status2:
-        print('call')
+        # print('call')
         saying = True
         converter = pyttsx3.init()
         converter.setProperty('rate', 150)
@@ -80,8 +80,14 @@ def lip_distance(shape):
 
     distance = abs(top_mean[1] - low_mean[1])
     return distance
+f=0
+def shadeMoter():
+    global f
+    print("down")
 
-
+    time.sleep(10.0)
+    print("up")
+    f=0
 ap = argparse.ArgumentParser()
 ap.add_argument("-w", "--webcam", type=int, default=0,
                 help="index of webcam on system")
@@ -105,7 +111,6 @@ print("-> Starting Video Stream")
 vs = VideoStream(src=args["webcam"]).start()
 #vs= VideoStream(usePiCamera=True).start()       //For Raspberry Pi
 time.sleep(1.0)
-
 while True:
 
     frame = vs.read()
@@ -137,8 +142,13 @@ while True:
         r=len(gray[rect0001:rect1011])
         avg=avg/(r*c)
         print("Luminacance : ",avg)
-
-
+        print(f)
+        if(avg>190 and f==0):
+            f=1
+            t = Thread(target=shadeMoter)
+            t.deamon = True
+            t.start()
+        # elif(avg):
 
 
         eye = final_ear(shape)
@@ -158,8 +168,7 @@ while True:
 
         if ear < EYE_AR_THRESH:
             COUNTER += 1
-
-            if COUNTER >= EYE_AR_CONSEC_FRAMES:
+            if COUNTER >= EYE_AR_CONSEC_FRAMES*2:
                 if alarm_status == False:
                     alarm_status = True
                     t = Thread(target=alarm, args=('wake up sir',))
