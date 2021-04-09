@@ -113,8 +113,8 @@ while True:
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     # rects = detector(gray, 0)
     rects = detector.detectMultiScale(gray, scaleFactor=1.1, 
-		minNeighbors=5, minSize=(30, 30),
-		flags=cv2.CASCADE_SCALE_IMAGE)
+        minNeighbors=5, minSize=(30, 30),
+        flags=cv2.CASCADE_SCALE_IMAGE)
     #for rect in rects:
     for (x, y, w, h) in rects:
         rect = dlib.rectangle(int(x), int(y), int(x + w),int(y + h))
