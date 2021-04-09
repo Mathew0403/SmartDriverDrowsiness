@@ -13,13 +13,26 @@ import cv2
 import os
 
 import pyttsx3
-from numpy import asarray
-
+BlinkCounter = 0
+Wb=0
+Wr=0
+Wy=0
+Wt=0
+def minute_passed():
+    global Wb
+    while True:
+        time.sleep(60)
+        print("BlinkCounter after one:",BlinkCounter)
+        if(BlinkCounter<5 or BlinkCounter>25):
+            Wb=1
+        print("one passed")
+    
 def alarm(msg):
+    global BlinkCounter
     global alarm_status
     global alarm_status2
     global saying
-
+    conseq = BlinkCounter
     while alarm_status:
         # print('call')
         # s = 'espeak "'+msg+'"'
@@ -27,8 +40,10 @@ def alarm(msg):
         converter = pyttsx3.init()
         converter.setProperty('rate', 150)
         converter.setProperty('volume', 0.7)
-
         converter.say(msg)
+        BlinkCounter += 1
+        if(conseq+1<BlinkCounter):
+            Wt=1
         converter.runAndWait()
         converter.stop()
 
@@ -101,18 +116,24 @@ alarm_status2 = False
 saying = False
 COUNTER = 0
 
+starttime = time.time()
 print("-> Loading the predictor and detector...")
 # detector = dlib.get_frontal_face_detector()
 detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")    #Faster but less accurate
 predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
 
+t = Thread(target=minute_passed)
+t.deamon = True
+t.start()
 
 print("-> Starting Video Stream")
 vs = VideoStream(src=args["webcam"]).start()
 #vs= VideoStream(usePiCamera=True).start()       //For Raspberry Pi
 time.sleep(1.0)
-while True:
 
+while True:
+    print(BlinkCounter)
+    print(Wb)
     frame = vs.read()
     frame = imutils.resize(frame, width=450)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -142,7 +163,6 @@ while True:
         r=len(gray[rect0001:rect1011])
         avg=avg/(r*c)
         print("Luminacance : ",avg)
-        print(f)
         if(avg>190 and f==0):
             f=1
             t = Thread(target=shadeMoter)
@@ -171,13 +191,16 @@ while True:
             if COUNTER >= EYE_AR_CONSEC_FRAMES*2:
                 if alarm_status == False:
                     alarm_status = True
+
+                    Wr=1
+
                     t = Thread(target=alarm, args=('wake up sir',))
                     t.deamon = True
                     t.start()
 
-                cv2.putText(frame, "DROWSINESS ALERT!", (10, 30),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-
+                # cv2.putText(frame, "DROWSINESS ALERT!", (10, 30),
+                            # cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            
         else:
             COUNTER = 0
             alarm_status = False
@@ -187,17 +210,30 @@ while True:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 if alarm_status2 == False and saying == False:
                     alarm_status2 = True
+                    Wy=1
                     t = Thread(target=alarm, args=('take some fresh air sir',))
                     t.deamon = True
                     t.start()
         else:
             alarm_status2 = False
+        
 
         cv2.putText(frame, "EAR: {:.2f}".format(ear), (300, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         cv2.putText(frame, "YAWN: {:.2f}".format(distance), (300, 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-
+    print(Wr,Wy,Wb,Wt,Wr+Wy+Wb+Wt)
+    if((Wr+Wy+Wb+Wt)>=2):
+        Wb=0
+        Wr=0
+        Wy=0
+        Wt=0
+        print("Special DROWSINESS Special DROWSINESS Special DROWSINESS")
+        t = Thread(target=alarm, args=('Special DROWSINESS Special DROWSINESS Special DROWSINESS',))
+        t.deamon = True
+        t.start()
+        cv2.putText(frame, "Special DROWSINESS: {:.2f}".format(distance), (300, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
     cv2.imshow("Frame", frame)
     key = cv2.waitKey(1) & 0xFF
