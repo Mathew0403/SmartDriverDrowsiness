@@ -10,51 +10,57 @@ import imutils
 import time
 import dlib
 import cv2
-import os
+# import os
 
 import pyttsx3
+
 BlinkCounter = 0
 Wb=0
 Wr=0
 Wy=0
 Wt=0
+#checks the number of times blinks every minute
 def minute_passed():
     global Wb
+    global BlinkCounter
     while True:
         time.sleep(60)
         print("BlinkCounter after one:",BlinkCounter)
         if(BlinkCounter<5 or BlinkCounter>25):
             Wb=1
         print("one passed")
+        BlinkCounter=0
     
+#For voice alert and vibrator
 def alarm(msg):
     global BlinkCounter
     global alarm_status
     global alarm_status2
     global saying
     conseq = BlinkCounter
+    converter = pyttsx3.init()
+    converter.setProperty('rate', 150)
+    converter.setProperty('volume', 0.5)
+    #any two values of Wb Wr Wt Wy is active
     if "Special DROWSINESS" in msg:
         print("call vibrator")
+        converter.setProperty('volume', 0.9)
+    #alarm_status=eye closed
     while alarm_status:
         # print('call')
         # s = 'espeak "'+msg+'"'
         # os.system(s)
-        converter = pyttsx3.init()
-        converter.setProperty('rate', 150)
-        converter.setProperty('volume', 0.7)
         converter.say(msg)
         BlinkCounter += 1
+        #when eye is closed for too long
         if(conseq+1<BlinkCounter):
             Wt=1
         converter.runAndWait()
         converter.stop()
-
+    #alarm_status2=yawning
     if alarm_status2:
         # print('call')
         saying = True
-        converter = pyttsx3.init()
-        converter.setProperty('rate', 150)
-        converter.setProperty('volume', 0.7)
 
         # s = 'espeak "' + msg + '"'
         # os.system(s)
@@ -62,6 +68,7 @@ def alarm(msg):
         saying = False
         converter.runAndWait()
         converter.stop()
+#eye_aspect_ratio for each call
 def eye_aspect_ratio(eye):
     A = dist.euclidean(eye[1], eye[5])
     B = dist.euclidean(eye[2], eye[4])
@@ -71,7 +78,7 @@ def eye_aspect_ratio(eye):
     ear = (A + B) / (2.0 * C)
 
     return ear
-
+# eye_aspect_ratio
 def final_ear(shape):
     (lStart, lEnd) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
     (rStart, rEnd) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
@@ -101,8 +108,9 @@ f=0
 def shadeMoter():
     global f
     print("down")
-
-    time.sleep(10.0)
+    #motor down
+    time.sleep(10*60.0)
+    #motor up
     print("up")
     f=0
 ap = argparse.ArgumentParser()
@@ -110,15 +118,15 @@ ap.add_argument("-w", "--webcam", type=int, default=0,
                 help="index of webcam on system")
 args = vars(ap.parse_args())
 
+LUMINACANCE_THRESH = 190
 EYE_AR_THRESH = 0.3
 EYE_AR_CONSEC_FRAMES = 30
-YAWN_THRESH = 25
+YAWN_THRESH = 24
 alarm_status = False
 alarm_status2 = False
 saying = False
 COUNTER = 0
 
-starttime = time.time()
 print("-> Loading the predictor and detector...")
 # detector = dlib.get_frontal_face_detector()
 detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")    #Faster but less accurate
@@ -130,12 +138,11 @@ t.start()
 
 print("-> Starting Video Stream")
 vs = VideoStream(src=args["webcam"]).start()
-#vs= VideoStream(usePiCamera=True).start()       //For Raspberry Pi
+# vs= VideoStream(usePiCamera=True).start()       //For Raspberry Pi
 time.sleep(1.0)
 
 while True:
-    print(BlinkCounter)
-    print(Wb)
+    print("BlinkCounter :",BlinkCounter)
     frame = vs.read()
     frame = imutils.resize(frame, width=450)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -150,7 +157,7 @@ while True:
         shape = face_utils.shape_to_np(shape)
         
 
-#Luminacance
+        #Luminacance
         avg=0
         r,c=0,0
         fwidth=w//4
@@ -165,7 +172,7 @@ while True:
         r=len(gray[rect0001:rect1011])
         avg=avg/(r*c)
         print("Luminacance : ",avg)
-        if(avg>190 and f==0):
+        if(avg>LUMINACANCE_THRESH and f==0):
             f=1
             t = Thread(target=shadeMoter)
             t.deamon = True
@@ -224,7 +231,11 @@ while True:
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
         cv2.putText(frame, "YAWN: {:.2f}".format(distance), (300, 60),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-    print(Wr,Wy,Wb,Wt,Wr+Wy+Wb+Wt)
+    print("Wr : ",Wr)
+    print("Wy : ",Wy)
+    print("Wb : ",Wb)
+    print("Wt : ",Wt)
+    print("Wr+Wy+Wb+Wt : ",Wr+Wy+Wb+Wt)
     if((Wr+Wy+Wb+Wt)>=2):
         Wb=0
         Wr=0
