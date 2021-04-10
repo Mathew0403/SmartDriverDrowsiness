@@ -1,5 +1,7 @@
 # SmartDriverDrowsiness
 detect driver drowsiness and response
+# Drowsiness and Yawn detection with voice alert using Dlib
+
 Simple code in python to detect Drowsiness and Yawn and alert the user using Dlib.
 
 ## Dependencies
@@ -15,7 +17,7 @@ Simple code in python to detect Drowsiness and Yawn and alert the user using Dli
 ## Run 
 
 ```
-python3 drowsiness_yawn.py -- webcam 0		//For external webcam, use the webcam number accordingly
+python3 drowsiness_yawn.py --webcam 0		//For external webcam, use the webcam number accordingly
 ```
 
 ## Setups
