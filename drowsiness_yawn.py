@@ -33,6 +33,8 @@ def alarm(msg):
     global alarm_status2
     global saying
     conseq = BlinkCounter
+    if "Special DROWSINESS" in msg:
+        print("call vibrator")
     while alarm_status:
         # print('call')
         # s = 'espeak "'+msg+'"'
@@ -110,7 +112,7 @@ args = vars(ap.parse_args())
 
 EYE_AR_THRESH = 0.3
 EYE_AR_CONSEC_FRAMES = 30
-YAWN_THRESH = 20
+YAWN_THRESH = 25
 alarm_status = False
 alarm_status2 = False
 saying = False
