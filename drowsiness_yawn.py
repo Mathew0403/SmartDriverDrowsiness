@@ -45,6 +45,11 @@ def alarm(msg):
     if "Special DROWSINESS" in msg:
         print("call vibrator")
         converter.setProperty('volume', 0.9)
+    if "down" in msg or "up" in msg:
+        converter.setProperty('volume', 0.9)
+        converter.say(msg)
+        converter.runAndWait()
+        converter.stop()
     #alarm_status=eye closed
     while alarm_status:
         # print('call')
@@ -64,8 +69,8 @@ def alarm(msg):
 
         # s = 'espeak "' + msg + '"'
         # os.system(s)
-        converter.say(msg)
         saying = False
+        converter.say(msg)
         converter.runAndWait()
         converter.stop()
 #eye_aspect_ratio for each call
@@ -107,10 +112,18 @@ def lip_distance(shape):
 f=0
 def shadeMoter():
     global f
+    f=1
     print("down")
     #motor down
-    time.sleep(10*60.0)
+    t = Thread(target=alarm, args=('motor down',))
+    t.deamon = True
+    t.start()
+    #TODO 10 ->600 for 10 minutes
+    time.sleep(10.0)
     #motor up
+    t = Thread(target=alarm, args=('motor up',))
+    t.deamon = True
+    t.start()
     print("up")
     f=0
 ap = argparse.ArgumentParser()
@@ -173,7 +186,6 @@ while True:
         avg=avg/(r*c)
         print("Luminacance : ",avg)
         if(avg>LUMINACANCE_THRESH and f==0):
-            f=1
             t = Thread(target=shadeMoter)
             t.deamon = True
             t.start()
@@ -212,6 +224,7 @@ while True:
             
         else:
             COUNTER = 0
+            Wr=0
             alarm_status = False
 
         if (distance > YAWN_THRESH):
